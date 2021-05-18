@@ -1,9 +1,24 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
-/// @title Base contract for simple crowdsales
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+
+/// @title Base contract for simple crowdbuy
 contract Crowdsale {
+    using SafeMath for uint256;
+    /**
+     * Евент о получении платежа
+     * @param from Адрес от кого получили
+     * @param amount Количество полученного эфира
+     */
     event PaymentReceived(address from, uint256 amount);
+    /**
+     * Евент об окончании сбора средств
+     * @param productID ID покупаемого товара
+     * @param totalSum Общая собранная сумма
+     */
+    event CrowdFinished(uint256 productID, uint256 totalSum);
+
     uint256 beginDate;
     uint256 endDate;
     uint256 minPayment;
@@ -11,33 +26,45 @@ contract Crowdsale {
     uint256 currSum;
     uint256 totalSum;
     uint256 productID;
+    bool isFinished = false;
     mapping(address => uint256) participantsList;
 
-    modifier checkEndDate() {
-        uint256 currDate = block.timestamp;
-        require(currDate <= endDate);
-        _;
-    }
-    modifier checkMinPayment() {
-        require(msg.value >= minPayment);
+
+    modifier checkIsFinished() {
+        require(!isFinished);
         _;
     }
 
+    modifier checkIsSeller() {
+        require(!isFinished);
+        _;
+    }
+    /**
+     * @param _endDate Даты окончания покупки
+     * @param _minPayment Минимальный входной платеж
+     * @param _totalSum Общая сумма, которую нужно собрать
+     * @param _destAddress Адрес, куда пойдут собранные деньги
+     * @param _productID ID товара который собрались покупать
+     */
     constructor(
-        uint256 endDate_,
-        uint256 minPayment_,
-        uint256 totalSum_,
-        address payable destAddress_,
-        uint256 productID_
-    ) {
-        beginDate = beginDate;
+        uint256 _endDate,
+        uint256 _minPayment,
+        uint256 _totalSum,
+        address payable _destAddress,
+        uint256 _productID
+    ) public {
+        require(_endDate > block.timestamp);
+        require(_totalSum > 0);
+        require(_destAddress != address(0));
+        require(_minPayment > 0);
+
         beginDate = block.timestamp;
-        endDate = endDate_;
-        minPayment = minPayment_;
+        endDate = _endDate;
+        minPayment = _minPayment;
         currSum = 0;
-        totalSum = totalSum_;
-        destAddress = destAddress_;
-        productID = productID_;
+        totalSum = _totalSum;
+        destAddress = _destAddress;
+        productID = _productID;
     }
 
     /**
@@ -60,12 +87,32 @@ contract Crowdsale {
     function getEndedDate() public view returns (uint256) {
         return endDate;
     }
+    /**
+     * @dev Получение очередного платежа
+     */
+    receive() external payable {
+        require(currSum < totalSum);
+        require(block.timestamp < endDate);
+        require(msg.value >= minPayment);
+        require(!isFinished);
 
-    //todo memory and default varables
-    receive() external payable checkEndDate checkMinPayment {
-        //todo првоерить что больше 0, safeMath юзать
-        totalSum += msg.value;
-        participantsList[msg.sender] += msg.value;
+        currSum.add(msg.value);
+        participantsList[msg.sender].add(msg.value);
+
+        if (currSum >= totalSum) {
+            finishCrowd();
+        }
         emit PaymentReceived(msg.sender, msg.value);
+    }
+
+    function endCrowdbuy() external checkIsFinished checkIsSeller {
+        require(!isFinished);
+        finishCrowd();
+    }
+
+    function finishCrowd() internal {
+        isFinished = true;
+        destAddress.transfer(currSum);
+        emit CrowdFinished(productID, currSum);
     }
 }
