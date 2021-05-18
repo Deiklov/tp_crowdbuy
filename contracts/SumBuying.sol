@@ -4,7 +4,7 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 /// @title Base contract for simple crowdbuy
-contract Crowdsale {
+contract CrowdBuy {
     using SafeMath for uint256;
     /**
      * Евент о получении платежа
