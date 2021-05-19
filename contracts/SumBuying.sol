@@ -80,6 +80,12 @@ contract CrowdBuy {
     function getNeededSum() public view returns (uint256) {
         return totalSum;
     }
+    /**
+     * @dev Проверка закончились ли сборы
+     */
+    function getIsFinished() public view returns (bool) {
+        return isFinished;
+    }
 
     /**
      * @dev Getter for the end date of collecting etherium
@@ -96,8 +102,9 @@ contract CrowdBuy {
         require(msg.value >= minPayment);
         require(!isFinished);
 
-        currSum.add(msg.value);
-        participantsList[msg.sender].add(msg.value);
+        currSum = currSum.add(msg.value);
+        //никак не используется
+        participantsList[msg.sender] = participantsList[msg.sender].add(msg.value);
 
         if (currSum >= totalSum) {
             finishCrowd();

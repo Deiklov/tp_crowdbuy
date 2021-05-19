@@ -1,4 +1,5 @@
 import pytest
+import time
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -9,7 +10,7 @@ def isolate(fn_isolation):
 
 
 @pytest.fixture(scope="module")
-def token(CrowdBuy, accounts):
-    return CrowdBuy.deploy(1621319849, 300,
-                           1 ** 18, accounts[1], 15,
+def contract(CrowdBuy, accounts):
+    return CrowdBuy.deploy(int(time.time())+100000, 300,
+                           1*10**18, accounts[1], 15,
                            {'from': accounts[0]})
