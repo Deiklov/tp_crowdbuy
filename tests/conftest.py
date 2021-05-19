@@ -11,6 +11,6 @@ def isolate(fn_isolation):
 
 @pytest.fixture(scope="module")
 def contract(CrowdBuy, accounts):
-    return CrowdBuy.deploy(int(time.time())+100000, 300,
-                           1*10**18, accounts[1], 15,
-                           {'from': accounts[0]})
+        return CrowdBuy.deploy(int(time.time())+10000000, 300,
+                               1*10**18, accounts[1], 15,
+                               {'from': accounts[0]})
